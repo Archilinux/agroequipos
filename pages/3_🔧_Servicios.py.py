@@ -15,7 +15,7 @@ with st.form("form_servicios", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1:
         fecha = st.date_input("Fecha del servicio", date.today())
-        tecnico = st.selectbox("Técnico", ["Selecciona...", "Téc. Roberto", "Téc. Ana"])
+        tecnico = st.selectbox("Técnico", ["Selecciona...", "Gonzalo", "Eduardo", "Isaac", "Antonio"])
     with col2:
         cliente = st.text_input("Nombre del Cliente (Opcional)")
         tipo_servicio = st.selectbox("Tipo de servicio", ["Mantenimiento", "Reparación", "Garantía"])
