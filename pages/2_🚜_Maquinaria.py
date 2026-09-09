@@ -15,7 +15,7 @@ with st.form("form_maquinaria", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1:
         fecha = st.date_input("Fecha de la venta", date.today())
-        vendedor = st.selectbox("Vendedor", ["Selecciona...", "Juan Pérez", "María Gómez"])
+        vendedor = st.selectbox("Vendedor", ["Selecciona...", "Jorge Gongora", "Eddy Garcia"])
     with col2:
         cliente = st.text_input("Nombre del Cliente (Opcional)")
         equipo = st.text_input("Modelo de Maquinaria (ej. Tractor, Aspersora, Remolque)")
