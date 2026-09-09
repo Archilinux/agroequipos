@@ -5,6 +5,16 @@ from datetime import date
 
 st.set_page_config(page_title="Refacciones", layout="wide")
 st.header("🛠️ Encuesta de Satisfacción - Refacciones")
+# Ocultar el menú lateral para los clientes
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] { display: none; }
+    [data-testid="collapsedControl"] { display: none; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Conectamos a Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
