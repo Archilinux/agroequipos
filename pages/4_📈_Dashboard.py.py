@@ -1,103 +1,102 @@
 import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
-from datetime import date
 
-st.set_page_config(page_title="Dashboard", layout="wide")
-st.header("📈 Reportes y Análisis de Satisfacción")
+st.set_page_config(page_title="Dashboard Directivo", layout="wide")
+st.title("📈 Dashboard Directivo - Agro Equipos")
+st.markdown("Monitoreo de satisfacción y áreas de oportunidad")
 
-# Conectamos a Google Sheets
+# Conexión a la base de datos
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Diccionario para convertir texto a número y poder graficar promedios
-mapa_valores = {"Muy mala": 1, "Mala": 2, "Regular": 3, "Buena": 4, "Muy buena": 5}
+# Cargar datos con caché de 1 minuto para no saturar Google
+@st.cache_data(ttl=60)
+def cargar_datos():
+    df_ref = conn.read(worksheet="Refacciones").dropna(how="all")
+    df_maq = conn.read(worksheet="Maquinaria").dropna(how="all")
+    df_ser = conn.read(worksheet="Servicios").dropna(how="all")
+    return df_ref, df_maq, df_ser
 
-# --- FILTROS GLOBALES ---
-col1, col2, col3 = st.columns(3)
-with col1:
-    fecha_inicio = st.date_input("Desde la fecha:", date(date.today().year, date.today().month, 1))
-with col2:
-    fecha_fin = st.date_input("Hasta la fecha:", date.today())
-with col3:
-    st.write("") # Espacio en blanco para alinear el botón
-    st.write("")
-    if st.button("🔄 Sincronizar con Drive"):
-        st.cache_data.clear()
-
-st.divider()
-
-# ==========================================
-# REPORTE: MAQUINARIA (POR VENDEDOR)
-# ==========================================
 try:
-    df_maq = conn.read(worksheet="Maquinaria")
-    if not df_maq.empty and "Fecha" in df_maq.columns:
-        # Convertir a formato fecha y filtrar
-        df_maq['Fecha'] = pd.to_datetime(df_maq['Fecha']).dt.date
-        df_maq_filtro = df_maq[(df_maq['Fecha'] >= fecha_inicio) & (df_maq['Fecha'] <= fecha_fin)]
-        
-        st.subheader(f"🚜 Desempeño de Vendedores ({len(df_maq_filtro)} encuestas)")
-        
-        if not df_maq_filtro.empty:
-            # Convertimos la calificación de texto a número
-            df_maq_filtro['Puntaje_Experiencia'] = df_maq_filtro['Experiencia'].map(mapa_valores)
-            
-            # Agrupamos por vendedor para sacar su promedio
-            promedios_maq = df_maq_filtro.groupby("Vendedor")['Puntaje_Experiencia'].mean()
-            st.bar_chart(promedios_maq)
-        else:
-            st.info("No hay encuestas de Maquinaria en este periodo.")
+    df_ref, df_maq, df_ser = cargar_datos()
 except Exception as e:
-    st.warning("La pestaña 'Maquinaria' aún no tiene datos o no existe.")
+    st.error("Esperando datos... Asegúrate de que las hojas de Excel tengan información.")
+    st.stop()
 
-st.divider()
+# Crear pestañas para cada área
+tab1, tab2, tab3 = st.tabs(["🛠️ Refacciones", "🚜 Maquinaria", "🔧 Servicios"])
 
-# ==========================================
-# REPORTE: SERVICIOS (POR TÉCNICO)
-# ==========================================
-try:
-    df_servicios = conn.read(worksheet="Servicios")
-    if not df_servicios.empty and "Fecha" in df_servicios.columns:
-        df_servicios['Fecha'] = pd.to_datetime(df_servicios['Fecha']).dt.date
-        df_serv_filtro = df_servicios[(df_servicios['Fecha'] >= fecha_inicio) & (df_servicios['Fecha'] <= fecha_fin)]
+# --- PESTAÑA 1: REFACCIONES ---
+with tab1:
+    if df_ref.empty:
+        st.info("Aún no hay encuestas registradas en Refacciones.")
+    else:
+        # Indicadores Clave (KPIs)
+        total_ref = len(df_ref)
+        malas_ref = len(df_ref[df_ref['Experiencia'].isin(['Mala', 'Muy mala'])])
         
-        st.subheader(f"🔧 Evaluación de Técnicos ({len(df_serv_filtro)} encuestas)")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total de Encuestas", total_ref)
+        col2.metric("Alertas (Malas / Muy malas)", malas_ref)
         
-        if not df_serv_filtro.empty:
-            df_serv_filtro['Puntaje_Calidad'] = df_serv_filtro['Calidad'].map(mapa_valores)
+        # Gráficas
+        st.subheader("Resumen General de Experiencia")
+        st.bar_chart(df_ref['Experiencia'].value_counts())
+        
+        # Tabla de Observaciones
+        st.subheader("📝 Observaciones de los Clientes")
+        obs_ref = df_ref[['Fecha', 'Pieza', 'Experiencia', 'Mejoras']].dropna(subset=['Mejoras'])
+        obs_ref = obs_ref[obs_ref['Mejoras'].str.strip() != '']
+        st.dataframe(obs_ref, use_container_width=True, hide_index=True)
+
+
+# --- PESTAÑA 2: MAQUINARIA ---
+with tab2:
+    if df_maq.empty:
+        st.info("Aún no hay encuestas registradas en Maquinaria.")
+    else:
+        total_maq = len(df_maq)
+        malas_maq = len(df_maq[df_maq['Experiencia'].isin(['Mala', 'Muy mala'])])
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total de Encuestas", total_maq)
+        col2.metric("Alertas (Malas / Muy malas)", malas_maq)
+        
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            st.subheader("Experiencia General")
+            st.bar_chart(df_maq['Experiencia'].value_counts())
+        with col_g2:
+            st.subheader("Encuestas por Vendedor")
+            st.bar_chart(df_maq['Vendedor'].value_counts())
             
-            promedios_tec = df_serv_filtro.groupby("Tecnico")['Puntaje_Calidad'].mean()
-            st.bar_chart(promedios_tec)
-            
-            # Tabla desplegable para ver comentarios de quejas/sugerencias
-            with st.expander("Ver comentarios de clientes (Servicios)"):
-                comentarios = df_serv_filtro[['Fecha', 'Tecnico', 'Mejoras']].dropna(subset=['Mejoras'])
-                st.dataframe(comentarios[comentarios['Mejoras'] != ""])
-        else:
-            st.info("No hay encuestas de Servicios en este periodo.")
-except Exception as e:
-    st.warning("La pestaña 'Servicios' aún no tiene datos o no existe.")
+        st.subheader("📝 Observaciones de los Clientes")
+        obs_maq = df_maq[['Fecha', 'Vendedor', 'Equipo', 'Mejoras']].dropna(subset=['Mejoras'])
+        obs_maq = obs_maq[obs_maq['Mejoras'].str.strip() != '']
+        st.dataframe(obs_maq, use_container_width=True, hide_index=True)
 
-st.divider()
 
-# ==========================================
-# REPORTE: REFACCIONES
-# ==========================================
-try:
-    df_ref = conn.read(worksheet="Refacciones")
-    if not df_ref.empty and "Fecha" in df_ref.columns:
-        df_ref['Fecha'] = pd.to_datetime(df_ref['Fecha']).dt.date
-        df_ref_filtro = df_ref[(df_ref['Fecha'] >= fecha_inicio) & (df_ref['Fecha'] <= fecha_fin)]
+# --- PESTAÑA 3: SERVICIOS ---
+with tab3:
+    if df_ser.empty:
+        st.info("Aún no hay encuestas registradas en Servicios.")
+    else:
+        total_ser = len(df_ser)
+        malas_ser = len(df_ser[df_ser['Experiencia'].isin(['Mala', 'Muy mala'])])
         
-        st.subheader(f"🛠️ Atención en Mostrador ({len(df_ref_filtro)} encuestas)")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total de Encuestas", total_ser)
+        col2.metric("Alertas (Malas / Muy malas)", malas_ser)
         
-        if not df_ref_filtro.empty:
-            df_ref_filtro['Puntaje_Atencion'] = df_ref_filtro['Trato'].map(mapa_valores)
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            st.subheader("Experiencia General")
+            st.bar_chart(df_ser['Experiencia'].value_counts())
+        with col_g2:
+            st.subheader("Encuestas por Técnico")
+            st.bar_chart(df_ser['Tecnico'].value_counts())
             
-            # Aquí mostramos el promedio general de atención a lo largo de los días
-            promedio_diario = df_ref_filtro.groupby("Fecha")['Puntaje_Atencion'].mean()
-            st.line_chart(promedio_diario)
-        else:
-            st.info("No hay encuestas de Refacciones en este periodo.")
-except Exception as e:
-    st.warning("La pestaña 'Refacciones' aún no tiene datos o no existe.")
+        st.subheader("📝 Observaciones de los Clientes")
+        obs_ser = df_ser[['Fecha', 'Tecnico', 'Servicio', 'Mejoras']].dropna(subset=['Mejoras'])
+        obs_ser = obs_ser[obs_ser['Mejoras'].str.strip() != '']
+        st.dataframe(obs_ser, use_container_width=True, hide_index=True)
