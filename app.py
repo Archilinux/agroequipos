@@ -3,8 +3,9 @@ import streamlit as st
 st.set_page_config(page_title="Agro Equipos", layout="wide")
 
 try:
-    st.sidebar.image("Logo.png", use_container_width=True)
-except:
+    # Carga tu logotipo en el menú lateral
+    st.sidebar.image("Logo.jpeg", use_container_width=True)
+except Exception as e:
     pass
 
 st.title("📊 Agro Equipos - Portal Principal")
