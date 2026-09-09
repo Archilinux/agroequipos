@@ -4,8 +4,8 @@ from streamlit_gsheets import GSheetsConnection
 from datetime import date
 
 st.set_page_config(page_title="Refacciones", layout="wide")
-st.header("🛠️ Encuesta de Satisfacción - Refacciones")
-# Ocultar el menú lateral para los clientes
+
+# --- OCULTAR MENÚ LATERAL ---
 st.markdown(
     """
     <style>
@@ -15,6 +15,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+st.header("🛠️ Encuesta de Satisfacción - Refacciones")
 
 # Conectamos a Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -45,10 +47,8 @@ with st.form("form_refacciones", clear_on_submit=True):
     
     if st.form_submit_button("Guardar Encuesta"):
         if pieza:
-            # 1. Leer datos existentes
             df_existente = conn.read(worksheet="Refacciones")
             
-            # 2. Agrupar todas las respuestas
             datos = {
                 "Fecha": str(fecha_registro), 
                 "Cliente": cliente, 
@@ -62,7 +62,6 @@ with st.form("form_refacciones", clear_on_submit=True):
                 "Mejoras": comentarios
             }
             
-            # 3. Crear nueva fila y actualizar Google Sheets
             nueva_fila = pd.DataFrame([datos])
             df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
             
