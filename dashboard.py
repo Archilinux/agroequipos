@@ -6,10 +6,8 @@ st.set_page_config(page_title="Dashboard Directivo", layout="wide")
 st.title("📈 Dashboard Directivo - Agro Equipos")
 st.markdown("Monitoreo de satisfacción y áreas de oportunidad")
 
-# Conexión a la base de datos
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Cargar datos con caché de 1 minuto para no saturar Google
 @st.cache_data(ttl=60)
 def cargar_datos():
     df_ref = conn.read(worksheet="Refacciones").dropna(how="all")
@@ -23,7 +21,6 @@ except Exception as e:
     st.error("Esperando datos... Asegúrate de que las hojas de Excel tengan información.")
     st.stop()
 
-# Crear pestañas para cada área
 tab1, tab2, tab3 = st.tabs(["🛠️ Refacciones", "🚜 Maquinaria", "🔧 Servicios"])
 
 # --- PESTAÑA 1: REFACCIONES ---
@@ -31,7 +28,14 @@ with tab1:
     if df_ref.empty:
         st.info("Aún no hay encuestas registradas en Refacciones.")
     else:
-        # Indicadores Clave (KPIs)
+        st.download_button(
+            label="📥 Descargar base de datos (Excel/CSV)",
+            data=df_ref.to_csv(index=False).encode('utf-8-sig'),
+            file_name="Reporte_Refacciones.csv",
+            mime="text/csv",
+            type="primary"
+        )
+        
         total_ref = len(df_ref)
         malas_ref = len(df_ref[df_ref['Experiencia'].isin(['Mala', 'Muy mala'])])
         
@@ -39,11 +43,9 @@ with tab1:
         col1.metric("Total de Encuestas", total_ref)
         col2.metric("Alertas (Malas / Muy malas)", malas_ref)
         
-        # Gráficas
         st.subheader("Resumen General de Experiencia")
         st.bar_chart(df_ref['Experiencia'].value_counts())
         
-        # Tabla de Observaciones
         st.subheader("📝 Observaciones de los Clientes")
         obs_ref = df_ref[['Fecha', 'Pieza', 'Experiencia', 'Mejoras']].dropna(subset=['Mejoras'])
         obs_ref = obs_ref[obs_ref['Mejoras'].str.strip() != '']
@@ -55,6 +57,14 @@ with tab2:
     if df_maq.empty:
         st.info("Aún no hay encuestas registradas en Maquinaria.")
     else:
+        st.download_button(
+            label="📥 Descargar base de datos (Excel/CSV)",
+            data=df_maq.to_csv(index=False).encode('utf-8-sig'),
+            file_name="Reporte_Maquinaria.csv",
+            mime="text/csv",
+            type="primary"
+        )
+        
         total_maq = len(df_maq)
         malas_maq = len(df_maq[df_maq['Experiencia'].isin(['Mala', 'Muy mala'])])
         
@@ -81,6 +91,14 @@ with tab3:
     if df_ser.empty:
         st.info("Aún no hay encuestas registradas en Servicios.")
     else:
+        st.download_button(
+            label="📥 Descargar base de datos (Excel/CSV)",
+            data=df_ser.to_csv(index=False).encode('utf-8-sig'),
+            file_name="Reporte_Servicios.csv",
+            mime="text/csv",
+            type="primary"
+        )
+        
         total_ser = len(df_ser)
         malas_ser = len(df_ser[df_ser['Experiencia'].isin(['Mala', 'Muy mala'])])
         
