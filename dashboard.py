@@ -6,6 +6,13 @@ st.set_page_config(page_title="Dashboard Directivo", layout="wide")
 st.title("📈 Dashboard Directivo - Agro Equipos")
 st.markdown("Monitoreo de satisfacción y áreas de oportunidad")
 
+# --- SELECTOR DE GRÁFICAS ---
+tipo_grafica = st.radio(
+    "Elige el estilo visual para los reportes:",
+    ["📊 Barras", "📈 Líneas", "🌊 Área"],
+    horizontal=True
+)
+
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 @st.cache_data(ttl=60)
@@ -21,6 +28,16 @@ except Exception as e:
     st.error("Esperando datos... Asegúrate de que las hojas de Excel tengan información.")
     st.stop()
 
+# Función interna para cambiar las gráficas automáticamente
+def dibujar_grafica(datos):
+    if tipo_grafica == "📊 Barras":
+        st.bar_chart(datos)
+    elif tipo_grafica == "📈 Líneas":
+        st.line_chart(datos)
+    else:
+        st.area_chart(datos)
+
+# --- CREACIÓN DE PESTAÑAS ---
 tab1, tab2, tab3 = st.tabs(["🛠️ Refacciones", "🚜 Maquinaria", "🔧 Servicios"])
 
 # --- PESTAÑA 1: REFACCIONES ---
@@ -44,7 +61,8 @@ with tab1:
         col2.metric("Alertas (Malas / Muy malas)", malas_ref)
         
         st.subheader("Resumen General de Experiencia")
-        st.bar_chart(df_ref['Experiencia'].value_counts())
+        # Aquí usamos nuestra nueva función para la gráfica
+        dibujar_grafica(df_ref['Experiencia'].value_counts())
         
         st.subheader("📝 Observaciones de los Clientes")
         obs_ref = df_ref[['Fecha', 'Pieza', 'Experiencia', 'Mejoras']].dropna(subset=['Mejoras'])
@@ -75,10 +93,10 @@ with tab2:
         col_g1, col_g2 = st.columns(2)
         with col_g1:
             st.subheader("Experiencia General")
-            st.bar_chart(df_maq['Experiencia'].value_counts())
+            dibujar_grafica(df_maq['Experiencia'].value_counts())
         with col_g2:
             st.subheader("Encuestas por Vendedor")
-            st.bar_chart(df_maq['Vendedor'].value_counts())
+            dibujar_grafica(df_maq['Vendedor'].value_counts())
             
         st.subheader("📝 Observaciones de los Clientes")
         obs_maq = df_maq[['Fecha', 'Vendedor', 'Equipo', 'Mejoras']].dropna(subset=['Mejoras'])
@@ -109,10 +127,10 @@ with tab3:
         col_g1, col_g2 = st.columns(2)
         with col_g1:
             st.subheader("Experiencia General")
-            st.bar_chart(df_ser['Experiencia'].value_counts())
+            dibujar_grafica(df_ser['Experiencia'].value_counts())
         with col_g2:
             st.subheader("Encuestas por Técnico")
-            st.bar_chart(df_ser['Tecnico'].value_counts())
+            dibujar_grafica(df_ser['Tecnico'].value_counts())
             
         st.subheader("📝 Observaciones de los Clientes")
         obs_ser = df_ser[['Fecha', 'Tecnico', 'Servicio', 'Mejoras']].dropna(subset=['Mejoras'])
