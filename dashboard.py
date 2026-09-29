@@ -72,7 +72,7 @@ with tab1:
             
         st.subheader("📝 Observaciones")
         obs_ref = df_ref[['Fecha', 'Pieza', 'Experiencia', 'Mejoras']].dropna(subset=['Mejoras'])
-        st.dataframe(obs_ref[obs_ref['Mejoras'].str.strip() != ''], use_container_width=True, hide_index=True)
+        st.dataframe(obs_ref[obs_ref['Mejoras'].astype(str).str.strip() != ''], use_container_width=True, hide_index=True)
 
 
 # --- PESTAÑA 2: MAQUINARIA ---
@@ -89,7 +89,6 @@ with tab2:
         st.divider()
         st.subheader("📊 Desempeño Detallado - Maquinaria")
         
-        # Gráfica del personal ocupando todo el ancho
         st.markdown("**Encuestas por Vendedor**")
         dibujar_grafica(df_maq['Vendedor'].value_counts())
         
@@ -111,7 +110,7 @@ with tab2:
             
         st.subheader("📝 Observaciones")
         obs_maq = df_maq[['Fecha', 'Vendedor', 'Equipo', 'Mejoras']].dropna(subset=['Mejoras'])
-        st.dataframe(obs_maq[obs_maq['Mejoras'].str.strip() != ''], use_container_width=True, hide_index=True)
+        st.dataframe(obs_maq[obs_maq['Mejoras'].astype(str).str.strip() != ''], use_container_width=True, hide_index=True)
 
 
 # --- PESTAÑA 3: SERVICIOS ---
@@ -128,7 +127,6 @@ with tab3:
         st.divider()
         st.subheader("📊 Desempeño Detallado - Servicios")
         
-        # Gráfica del personal ocupando todo el ancho
         st.markdown("**Encuestas por Técnico**")
         dibujar_grafica(df_ser['Tecnico'].value_counts())
         
@@ -148,4 +146,4 @@ with tab3:
             
         st.subheader("📝 Observaciones")
         obs_ser = df_ser[['Fecha', 'Tecnico', 'Servicio', 'Mejoras']].dropna(subset=['Mejoras'])
-        st.dataframe(obs_ser[obs_ser['Mejoras'].str.strip() != ''], use_container_width=True, hide_index=True)
+        st.dataframe(obs_ser[obs_ser['Mejoras'].astype(str).str.strip() != ''], use_container_width=True, hide_index=True)
